@@ -1,11 +1,12 @@
 import { readFileSync, appendFile } from 'fs';
 import { Worker } from 'worker_threads'
+import chalk from 'chalk'
+import got from "got";
 
 import { FoldetEmailingClient } from './mail/foldet-client.js';
 import { AsariEmailingClient } from './mail/asari-client.js'
 import { Proxies } from './proxy.js'
 import * as KeyAuth from './KeyAuth.js'
-import got from "got";
 
 KeyAuth.api(
     "nitrogen", // Application Name
@@ -23,7 +24,7 @@ if (!KeyAuth.response.success) {
 const config = JSON.parse(readFileSync('config.json').toString())
 await KeyAuth.License(config.key)
 if (!KeyAuth.response.success) {
-    console.log("Invalid license key ;c")
+    console.log(`${chalk.bgRedBright("[ERR]")} Your license key is invalid :C`)
     process.exit(0)
 }
 const proxies = new Proxies(config.proxy.url);
@@ -43,7 +44,7 @@ proxies.loadProxies(readFileSync('proxies.txt').toString())
 async function createWorkir() {
     await proxies.downloadProxies()
 
-    console.log(`info: creating new task`)
+    console.log(`${chalk.cyanBright("[INFO]")} Creating a new task`)
     createWorker(proxies.getProxy(), createWorkir)
 }
 
@@ -51,13 +52,13 @@ function createWorker(proxy, exit) {
     var start = Date.now()
     var worker = new Worker(new URL('promo-worker.js', import.meta.url))
     worker.on('error', (err) => {
-        console.log(`failed: ${err}`)
+        console.log(`${chalk.red("[FAILED]")}: ${err}`)
         if(config.proxy.removeOnFail)
             proxies.pop(proxy)
     }).on('message', (message) => {
         if (message.type == "finish") {
             var code = message.value;
-            console.log(`success: ${code} in ${Date.now() - start}ms`)
+            console.log(`${chalk.green("[SUCCESS]")}: Created code ${code} in ${Date.now() - start}ms`)
             appendFile('gifts.txt', code + '\n', err => {
                 if (err)
                     console.log(`file append err: ${err}`)
