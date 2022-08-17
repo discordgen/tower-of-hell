@@ -1,0 +1,10 @@
+{
+    "noob": "dupkik.php",
+    "mail": {
+        "type": "asari"
+    },
+    "workers": 1,
+    "proxy": {
+        "removeOnFail": false
+    }
+}

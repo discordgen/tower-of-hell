@@ -15,7 +15,7 @@ export class AsariEmailingClient {
                         "User-Agent": "noratelimit"
                     }
                 }).json();
-
+                
                 if(response.error) {
                     clearInterval(waitForMails)
                     reject(response.message)
