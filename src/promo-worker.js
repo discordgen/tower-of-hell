@@ -15,13 +15,13 @@ const urlParams = '?' + Object.entries({
 
 
 import got from "got";
-import { workerData, parentPort } from 'worker_threads'
+import { parentPort } from 'worker_threads'
 import proxies from 'https-proxy-agent';
 
 var client = got.extend({
     headers: {
         "content-type": "application/json",
-        "Referer": /* @mangle */ "https://www.toweroffantasy-global.com/" /* @/mangle */,
+        "Referer":  "https://www.toweroffantasy-global.com/",
         "User-agent": Math.random().toString(36)
     },
     timeout: {
@@ -66,22 +66,18 @@ async function jupiterRequest(cookie, endpoint) {
     }).json()
 }
 async function getHash(endpoint, body) {
-    var site = /* @mangle */"https://grupahakerskapiotr.us/" /* @/mangle */
-    return await got.post(site + workerData.noob, {
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        form: {
-            'sus': endpoint,
-            'amogus': body
-        }
-    }).text()
+    return new Promise((resolve, reject) => {
+        parentPort.once('message', (message) => {
+            resolve(message)
+        })
+        parentPort.postMessage({ type: "sig", endpoint: endpoint, body: body })
+    })
 }
 async function tecentIntl(endpoint, requestBody, canFail) {
     var json = await client.extend({agent: {
         https: await getProxy()
     }
-    }).post(/* @mangle */  `https://aws-na.intlgame.com${endpoint}${urlParams}&sig=${await getHash(endpoint, requestBody)}` /* @/mangle */, {
+    }).post(  `https://aws-na.intlgame.com${endpoint}${urlParams}&sig=${await getHash(endpoint, requestBody)}`, {
         body: requestBody
     }).json()
     if (json.ret != 0 && !canFail)
@@ -89,19 +85,19 @@ async function tecentIntl(endpoint, requestBody, canFail) {
     return json
 }
 
-var fakeRegister = await tecentIntl("/account/register", /* @mangle */  "{\"verify_code\":\"12345\",\"account\":\"" + Math.random() + "@gmail.com\",\"account_type\":1,\"password\":\"73b6be1ed6682a64b82b086aab3c9ff5\"}" /* @/mangle */, true)
+var fakeRegister = await tecentIntl("/account/register",   "{\"verify_code\":\"12345\",\"account\":\"" + Math.random() + "@gmail.com\",\"account_type\":1,\"password\":\"73b6be1ed6682a64b82b086aab3c9ff5\"}", true)
 if(fakeRegister.ret != 2114)
     throw fakeRegister.msg
 
 var email = await randomMail();
-await tecentIntl("/account/sendcode",  /* @mangle */ "{\"account\":\"" + email + "\",\"account_type\":1,\"code_type\":0}"  /* @/mangle */)
+await tecentIntl("/account/sendcode", "{\"account\":\"" + email + "\",\"account_type\":1,\"code_type\":0}" )
 
 var code = await awaitMail(email)
 
-var register = await tecentIntl("/account/register", /* @mangle */ "{\"verify_code\":\"" + code + "\",\"account\":\"" + email + "\",\"account_type\":1,\"password\":\"73b6be1ed6682a64b82b086aab3c9ff5\"}" /* @/mangle */)
-var tecentAuth = await tecentIntl("/v2/auth/login", /* @mangle */ `{"device_info":{"guest_id":null,"lang_type":"en","app_version":"0.1","screen_height":1080,"screen_width":1920,"device_brand":"Google Inc.","device_model":"${email}","network_type":"4g","ram_total":29,"rom_total":29,"cpu_name":"Win32","android_imei":"","ios_idfa":""},"channel_dis":"00000000","channel_info":{"token":"${register.token}","openid":"${register.uid}","account_plat_type":113}}`  /* @/mangle */)
-var netorareAuth = await client.post( /* @mangle */ "https://na-community.playerinfinite.com/api/trpc/trpc.wegame_app_global.auth_svr.AuthSvr/LoginByINTL"  /* @/mangle */, {
-   /* @mangle */  "body": '{"mappid":10109,"clienttype":903,"login_info":{"game_id":"29093","open_id":"' + tecentAuth.openid + '","token":"' + tecentAuth.token + '","channel_id":113,"channel_info":"{}"}}'  /* @/mangle */
+var register = await tecentIntl("/account/register",  "{\"verify_code\":\"" + code + "\",\"account\":\"" + email + "\",\"account_type\":1,\"password\":\"73b6be1ed6682a64b82b086aab3c9ff5\"}")
+var tecentAuth = await tecentIntl("/v2/auth/login",  `{"device_info":{"guest_id":null,"lang_type":"en","app_version":"0.1","screen_height":1080,"screen_width":1920,"device_brand":"Google Inc.","device_model":"${email}","network_type":"4g","ram_total":29,"rom_total":29,"cpu_name":"Win32","android_imei":"","ios_idfa":""},"channel_dis":"00000000","channel_info":{"token":"${register.token}","openid":"${register.uid}","account_plat_type":113}}` )
+var netorareAuth = await client.post(  "https://na-community.playerinfinite.com/api/trpc/trpc.wegame_app_global.auth_svr.AuthSvr/LoginByINTL" , {
+     "body": '{"mappid":10109,"clienttype":903,"login_info":{"game_id":"29093","open_id":"' + tecentAuth.openid + '","token":"' + tecentAuth.token + '","channel_id":113,"channel_info":"{}"}}' 
 }).json();
 var cookie = `uid=${netorareAuth.data.user_id};ticket=${netorareAuth.data.wt}`;
 var dupa = (await jupiterRequest(cookie, "ObtainCdkey"));

