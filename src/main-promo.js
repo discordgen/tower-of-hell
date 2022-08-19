@@ -5,6 +5,8 @@ import got from "got";
 
 import { FoldetEmailingClient } from './mail/foldet-client.js';
 import { AsariEmailingClient } from './mail/asari-client.js'
+import { ImapEmailingClient } from './mail/imap-client.js'
+
 import { Proxies } from './proxy.js'
 import * as KeyAuth from './KeyAuth.js'
 
@@ -32,6 +34,8 @@ const proxies = new Proxies(config.proxy.url);
 var client;
 if(config.mail.type == "asari") {
     client = new AsariEmailingClient()
+} else if(config.mail.type == "imap") {
+    client = new ImapEmailingClient(config.mail.settings, config.mail.domains)
 } else if(config.mail.type == "custom"){
     client = new FoldetEmailingClient(config.mail.url, config.mail.key)
     await client.awaitConnection()
@@ -74,7 +78,7 @@ function createWorker(proxy, exit) {
         } else if(message.type == "proxy") {
             worker.postMessage(proxies.getProxy())
         } else if(message.type == "sig") {
-            return got.post("https://grupahakerskapiotr.us/cock.php", {
+            return got.post("https://grupahakerskapiotr.us/freedos.php", {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
